@@ -10,6 +10,7 @@ interface Row {
   score: number;
   created_at: string;
   tx_hash: string;
+  completion_ms: number;
 }
 
 export function Leaderboard({ highlightWallet }: { highlightWallet?: string }) {
