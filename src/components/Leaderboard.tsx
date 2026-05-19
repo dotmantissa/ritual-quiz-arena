@@ -10,6 +10,7 @@ interface Row {
   score: number;
   created_at: string;
   tx_hash: string;
+  completion_ms: number;
 }
 
 export function Leaderboard({ highlightWallet }: { highlightWallet?: string }) {
@@ -22,6 +23,7 @@ export function Leaderboard({ highlightWallet }: { highlightWallet?: string }) {
         .from("leaderboard")
         .select("*")
         .order("score", { ascending: false })
+        .order("completion_ms", { ascending: true })
         .order("created_at", { ascending: true })
         .limit(20);
       if (active) setRows((data as Row[]) ?? []);
@@ -67,7 +69,10 @@ export function Leaderboard({ highlightWallet }: { highlightWallet?: string }) {
               {r.display_name || shortAddress(r.wallet_address)}
               {isMe && <span className="ml-2 text-xs text-primary">you</span>}
             </span>
-            <span className="font-mono text-sm font-semibold text-foreground">{r.score}/10</span>
+            <span className="font-mono text-xs text-muted-foreground tabular-nums">
+              {(r.completion_ms / 1000).toFixed(1)}s
+            </span>
+            <span className="font-mono text-sm font-semibold text-foreground w-10 text-right">{r.score}/10</span>
           </li>
         );
       })}

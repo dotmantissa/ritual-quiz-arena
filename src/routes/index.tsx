@@ -15,12 +15,12 @@ export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
       { title: "Ritual Quiz — Web3 trivia on the Ritual network" },
-      { name: "description", content: "Connect your wallet, answer 10 timed questions, sign a tx on Ritual, and climb the leaderboard." },
+      { name: "description", content: "Connect your wallet, sign in, answer 10 timed questions, and climb the Ritual leaderboard." },
     ],
   }),
 });
 
-type Phase = "connect" | "welcome" | "quiz" | "result" | "submitted";
+type Phase = "connect" | "entry" | "welcome" | "quiz" | "submitted";
 
 function Index() {
   const [phase, setPhase] = useState<Phase>("connect");
@@ -28,16 +28,18 @@ function Index() {
   const [connecting, setConnecting] = useState(false);
   const [questions, setQuestions] = useState<Question[]>([]);
   const [score, setScore] = useState(0);
-  const [displayName, setDisplayName] = useState("");
-  const [submitting, setSubmitting] = useState(false);
+  const [completionMs, setCompletionMs] = useState(0);
+  const [discord, setDiscord] = useState("");
+  const [signing, setSigning] = useState(false);
   const [txHash, setTxHash] = useState<string | null>(null);
+  const [startedAt, setStartedAt] = useState<number>(0);
 
   const onConnect = async () => {
     setConnecting(true);
     try {
       const addr = await connectWallet();
       setAddress(addr);
-      setPhase("welcome");
+      setPhase("entry");
     } catch (e) {
       toast.error((e as Error).message);
     } finally {
@@ -45,46 +47,55 @@ function Index() {
     }
   };
 
-  const onStart = () => {
-    setQuestions(pickRandom(QUESTION_POOL, 10));
-    setScore(0);
-    setPhase("quiz");
-  };
-
-  const onComplete = (s: number) => {
-    setScore(s);
-    setPhase("result");
-  };
-
-  const onSubmit = async () => {
+  const onSignAndEnter = async () => {
     if (!address) return;
-    setSubmitting(true);
+    const name = discord.trim();
+    if (name.length < 2 || name.length > 32) {
+      toast.error("Enter a Discord username (2–32 chars).");
+      return;
+    }
+    setSigning(true);
     try {
       toast.info("Confirm the transaction in your wallet…");
       const hash = await sendSelfTx(address);
       setTxHash(hash);
-      const { error } = await supabase.from("leaderboard").insert({
-        wallet_address: address.toLowerCase(),
-        display_name: displayName.trim() || null,
-        score,
-        tx_hash: hash,
-      });
-      if (error) throw error;
-      toast.success("Score recorded on the leaderboard.");
-      setPhase("submitted");
+      toast.success("Entry confirmed.");
+      setPhase("welcome");
     } catch (e) {
-      const msg = (e as Error).message || "Transaction failed";
-      toast.error(msg);
+      toast.error((e as Error).message || "Transaction failed");
     } finally {
-      setSubmitting(false);
+      setSigning(false);
     }
+  };
+
+  const onStart = () => {
+    setQuestions(pickRandom(QUESTION_POOL, 10));
+    setScore(0);
+    setStartedAt(Date.now());
+    setPhase("quiz");
+  };
+
+  const onComplete = async (s: number) => {
+    const ms = Date.now() - startedAt;
+    setScore(s);
+    setCompletionMs(ms);
+    setPhase("submitted");
+    if (!address || !txHash) return;
+    const { error } = await supabase.from("leaderboard").insert({
+      wallet_address: address.toLowerCase(),
+      display_name: discord.trim(),
+      score: s,
+      tx_hash: txHash,
+      completion_ms: ms,
+    });
+    if (error) toast.error("Failed to record score: " + error.message);
+    else toast.success("Added to the leaderboard.");
   };
 
   return (
     <div className="relative min-h-screen grid-bg">
       <Toaster theme="dark" position="top-center" />
 
-      {/* Header */}
       <header className="flex items-center justify-between px-6 md:px-10 py-5 border-b border-border/60 backdrop-blur-sm bg-background/40 sticky top-0 z-10">
         <div className="flex items-center gap-2">
           <div className="h-7 w-7 rounded-md bg-primary/15 border border-primary/40 grid place-items-center">
@@ -116,7 +127,7 @@ function Index() {
               Prove your <span className="text-gradient">web3</span> mind.
             </h1>
             <p className="mt-6 text-lg text-muted-foreground">
-              Ten questions. Ten seconds each. One on-chain signature seals your spot on the Ritual leaderboard.
+              Ten questions. Fifteen seconds each. One on-chain signature seals your entry on the Ritual leaderboard.
             </p>
             <div className="mt-10">
               <Button size="lg" onClick={onConnect} disabled={connecting} className="glow-primary px-8 h-12 text-base">
@@ -133,14 +144,48 @@ function Index() {
           </section>
         )}
 
-        {phase === "welcome" && address && (
+        {phase === "entry" && address && (
+          <section className="max-w-md mx-auto">
+            <p className="font-mono text-xs uppercase tracking-[0.3em] text-primary mb-4 text-center">connected</p>
+            <h1 className="text-3xl md:text-4xl font-semibold tracking-tight text-center">Enter the ritual</h1>
+            <p className="mt-3 text-muted-foreground text-center">
+              Provide your Discord username and sign a small{" "}
+              <span className="font-mono text-foreground">0.001 {RITUAL_CHAIN.symbol}</span> self-transfer to begin.
+            </p>
+
+            <div className="mt-8 space-y-3">
+              <label className="text-xs font-mono uppercase tracking-widest text-muted-foreground">
+                Discord username
+              </label>
+              <Input
+                value={discord}
+                onChange={(e) => setDiscord(e.target.value)}
+                maxLength={32}
+                placeholder="yourname"
+                className="bg-card/60"
+              />
+            </div>
+
+            <Button
+              size="lg"
+              onClick={onSignAndEnter}
+              disabled={signing}
+              className="mt-6 w-full glow-primary h-12 text-base"
+            >
+              {signing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Wallet className="h-4 w-4" />}
+              Sign & enter
+            </Button>
+          </section>
+        )}
+
+        {phase === "welcome" && (
           <section className="text-center max-w-2xl mx-auto">
-            <p className="font-mono text-xs uppercase tracking-[0.3em] text-primary mb-6">connected</p>
+            <p className="font-mono text-xs uppercase tracking-[0.3em] text-primary mb-6">entry confirmed</p>
             <h1 className="text-4xl md:text-6xl font-semibold tracking-tight">
-              Welcome, <span className="font-mono text-gradient">{shortAddress(address)}</span>
+              Welcome, <span className="font-mono text-gradient">{discord.trim()}</span>
             </h1>
             <p className="mt-6 text-lg text-muted-foreground">
-              You'll get 10 random questions. 10 seconds each. Choose wisely.
+              10 random questions. 15 seconds each. Your finish time breaks ties.
             </p>
             <div className="mt-10 flex justify-center gap-3">
               <Button size="lg" onClick={onStart} className="glow-primary px-8 h-12 text-base">
@@ -156,57 +201,24 @@ function Index() {
           </section>
         )}
 
-        {phase === "result" && (
-          <section className="max-w-xl mx-auto text-center">
-            <p className="font-mono text-xs uppercase tracking-[0.3em] text-muted-foreground mb-4">your score</p>
-            <div className="text-8xl md:text-9xl font-semibold tracking-tighter text-gradient leading-none">
-              {score}
-              <span className="text-muted-foreground/40 text-5xl">/10</span>
-            </div>
-            <p className="mt-6 text-muted-foreground">
-              Sign a small <span className="font-mono text-foreground">0.001 {RITUAL_CHAIN.symbol}</span> self-transfer
-              to anchor your score on the Ritual leaderboard.
-            </p>
-
-            <div className="mt-8 space-y-3 text-left">
-              <label className="text-xs font-mono uppercase tracking-widest text-muted-foreground">
-                Display name <span className="opacity-50">(optional)</span>
-              </label>
-              <Input
-                value={displayName}
-                onChange={(e) => setDisplayName(e.target.value)}
-                maxLength={32}
-                placeholder="anon"
-                className="bg-card/60"
-              />
-            </div>
-
-            <Button
-              size="lg"
-              onClick={onSubmit}
-              disabled={submitting}
-              className="mt-6 w-full glow-primary h-12 text-base"
-            >
-              {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Wallet className="h-4 w-4" />}
-              Sign & submit
-            </Button>
-          </section>
-        )}
-
         {phase === "submitted" && (
           <section className="max-w-2xl mx-auto">
             <div className="text-center">
               <CheckCircle2 className="h-12 w-12 text-primary mx-auto mb-4" />
-              <h2 className="text-3xl md:text-4xl font-semibold">You're on the board.</h2>
-              <p className="mt-3 text-muted-foreground">
-                Score of <span className="text-foreground font-mono">{score}/10</span> recorded.
+              <p className="font-mono text-xs uppercase tracking-[0.3em] text-muted-foreground mb-4">your score</p>
+              <div className="text-7xl md:text-8xl font-semibold tracking-tighter text-gradient leading-none">
+                {score}
+                <span className="text-muted-foreground/40 text-4xl">/10</span>
+              </div>
+              <p className="mt-4 text-muted-foreground">
+                Finished in <span className="font-mono text-foreground">{(completionMs / 1000).toFixed(1)}s</span>
               </p>
               {txHash && (
                 <a
                   href={`${RITUAL_CHAIN.explorer}/tx/${txHash}`}
                   target="_blank"
                   rel="noreferrer"
-                  className="mt-4 inline-flex items-center gap-1.5 text-sm font-mono text-primary hover:underline"
+                  className="mt-3 inline-flex items-center gap-1.5 text-sm font-mono text-primary hover:underline"
                 >
                   {shortAddress(txHash)} <ExternalLink className="h-3 w-3" />
                 </a>
@@ -218,17 +230,6 @@ function Index() {
               </h3>
               <div className="rounded-xl border border-border bg-card/40 backdrop-blur px-4">
                 <Leaderboard highlightWallet={address ?? undefined} />
-              </div>
-              <div className="text-center mt-8">
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    setPhase("welcome");
-                    setTxHash(null);
-                  }}
-                >
-                  Play again
-                </Button>
               </div>
             </div>
           </section>

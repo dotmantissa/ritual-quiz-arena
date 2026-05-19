@@ -7,7 +7,7 @@ interface Props {
   onComplete: (score: number) => void;
 }
 
-const TIMER = 10;
+const TIMER = 15;
 
 export function Quiz({ questions, onComplete }: Props) {
   const [idx, setIdx] = useState(0);

@@ -16,6 +16,7 @@ export type Database = {
     Tables: {
       leaderboard: {
         Row: {
+          completion_ms: number
           created_at: string
           display_name: string | null
           id: string
@@ -24,6 +25,7 @@ export type Database = {
           wallet_address: string
         }
         Insert: {
+          completion_ms?: number
           created_at?: string
           display_name?: string | null
           id?: string
@@ -32,6 +34,7 @@ export type Database = {
           wallet_address: string
         }
         Update: {
+          completion_ms?: number
           created_at?: string
           display_name?: string | null
           id?: string
