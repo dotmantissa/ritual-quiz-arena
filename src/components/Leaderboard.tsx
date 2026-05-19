@@ -23,6 +23,7 @@ export function Leaderboard({ highlightWallet }: { highlightWallet?: string }) {
         .from("leaderboard")
         .select("*")
         .order("score", { ascending: false })
+        .order("completion_ms", { ascending: true })
         .order("created_at", { ascending: true })
         .limit(20);
       if (active) setRows((data as Row[]) ?? []);
