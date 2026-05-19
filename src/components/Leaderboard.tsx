@@ -69,7 +69,10 @@ export function Leaderboard({ highlightWallet }: { highlightWallet?: string }) {
               {r.display_name || shortAddress(r.wallet_address)}
               {isMe && <span className="ml-2 text-xs text-primary">you</span>}
             </span>
-            <span className="font-mono text-sm font-semibold text-foreground">{r.score}/10</span>
+            <span className="font-mono text-xs text-muted-foreground tabular-nums">
+              {(r.completion_ms / 1000).toFixed(1)}s
+            </span>
+            <span className="font-mono text-sm font-semibold text-foreground w-10 text-right">{r.score}/10</span>
           </li>
         );
       })}
