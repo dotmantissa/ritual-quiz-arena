@@ -49,13 +49,28 @@ function Index() {
 
   const onSignAndEnter = async () => {
     if (!address) return;
-    const name = discord.trim();
+    let name = discord.trim();
     if (name.length < 2 || name.length > 32) {
       toast.error("Enter a Discord username (2–32 chars).");
       return;
     }
     setSigning(true);
     try {
+      // If this wallet has played before, reuse its original username.
+      const { data: existing } = await supabase
+        .from("leaderboard")
+        .select("display_name")
+        .eq("wallet_address", address.toLowerCase())
+        .not("display_name", "is", null)
+        .order("created_at", { ascending: true })
+        .limit(1)
+        .maybeSingle();
+      if (existing?.display_name) {
+        name = existing.display_name;
+        setDiscord(name);
+        toast.info(`Welcome back, ${name}.`);
+      }
+
       toast.info("Confirm the transaction in your wallet…");
       const hash = await sendSelfTx(address);
       setTxHash(hash);
@@ -66,6 +81,14 @@ function Index() {
     } finally {
       setSigning(false);
     }
+  };
+
+  const onPlayAgain = () => {
+    setQuestions(pickRandom(QUESTION_POOL, 10));
+    setScore(0);
+    setCompletionMs(0);
+    setStartedAt(Date.now());
+    setPhase("quiz");
   };
 
   const onStart = () => {
@@ -223,6 +246,11 @@ function Index() {
                   {shortAddress(txHash)} <ExternalLink className="h-3 w-3" />
                 </a>
               )}
+            </div>
+            <div className="mt-10 flex justify-center">
+              <Button size="lg" onClick={onPlayAgain} className="glow-primary px-8 h-12 text-base">
+                Play again
+              </Button>
             </div>
             <div className="mt-12">
               <h3 className="text-xs font-mono uppercase tracking-widest text-muted-foreground mb-4 text-center">
