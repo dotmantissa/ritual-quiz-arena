@@ -247,6 +247,11 @@ function Index() {
                 </a>
               )}
             </div>
+            <div className="mt-10 flex justify-center">
+              <Button size="lg" onClick={onPlayAgain} className="glow-primary px-8 h-12 text-base">
+                Play again
+              </Button>
+            </div>
             <div className="mt-12">
               <h3 className="text-xs font-mono uppercase tracking-widest text-muted-foreground mb-4 text-center">
                 Leaderboard
