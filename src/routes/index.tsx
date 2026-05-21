@@ -250,16 +250,28 @@ function Index() {
               <p className="mt-4 text-muted-foreground">
                 Finished in <span className="font-mono text-foreground">{(completionMs / 1000).toFixed(1)}s</span>
               </p>
-              {txHash && (
-                <a
-                  href={`${RITUAL_CHAIN.explorer}/tx/${txHash}`}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="mt-3 inline-flex items-center gap-1.5 text-sm font-mono text-primary hover:underline"
-                >
-                  {shortAddress(txHash)} <ExternalLink className="h-3 w-3" />
-                </a>
-              )}
+              <div className="mt-3 flex flex-col items-center gap-1 text-sm font-mono">
+                {scoreTxHash && (
+                  <a
+                    href={`${RITUAL_CHAIN.explorer}/tx/${scoreTxHash}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center gap-1.5 text-primary hover:underline"
+                  >
+                    score on-chain: {shortAddress(scoreTxHash)} <ExternalLink className="h-3 w-3" />
+                  </a>
+                )}
+                {txHash && (
+                  <a
+                    href={`${RITUAL_CHAIN.explorer}/tx/${txHash}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center gap-1.5 text-muted-foreground hover:underline"
+                  >
+                    entry: {shortAddress(txHash)} <ExternalLink className="h-3 w-3" />
+                  </a>
+                )}
+              </div>
             </div>
             <div className="mt-10 flex justify-center">
               <Button size="lg" onClick={onPlayAgain} className="glow-primary px-8 h-12 text-base">
