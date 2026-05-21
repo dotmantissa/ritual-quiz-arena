@@ -5,6 +5,7 @@ import { toast, Toaster } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { connectWallet, sendSelfTx, shortAddress, RITUAL_CHAIN } from "@/lib/ritual-chain";
+import { saveScoreOnChain } from "@/lib/ritual-contract";
 import { QUESTION_POOL, pickRandom, type Question } from "@/lib/questions";
 import { Quiz } from "@/components/Quiz";
 import { Leaderboard } from "@/components/Leaderboard";
@@ -32,6 +33,7 @@ function Index() {
   const [discord, setDiscord] = useState("");
   const [signing, setSigning] = useState(false);
   const [txHash, setTxHash] = useState<string | null>(null);
+  const [scoreTxHash, setScoreTxHash] = useState<string | null>(null);
   const [startedAt, setStartedAt] = useState<number>(0);
 
   const onConnect = async () => {
@@ -104,11 +106,23 @@ function Index() {
     setCompletionMs(ms);
     setPhase("submitted");
     if (!address || !txHash) return;
+
+    // Save score on-chain to Ritual testnet.
+    let onChainHash: string | null = null;
+    try {
+      toast.info("Confirm the transaction to save your score on-chain…");
+      onChainHash = await saveScoreOnChain(address, discord.trim(), s, ms);
+      setScoreTxHash(onChainHash);
+      toast.success("Score saved on Ritual.");
+    } catch (e) {
+      toast.error("On-chain save failed: " + (e as Error).message);
+    }
+
     const { error } = await supabase.from("leaderboard").insert({
       wallet_address: address.toLowerCase(),
       display_name: discord.trim(),
       score: s,
-      tx_hash: txHash,
+      tx_hash: onChainHash ?? txHash,
       completion_ms: ms,
     });
     if (error) toast.error("Failed to record score: " + error.message);
@@ -236,16 +250,28 @@ function Index() {
               <p className="mt-4 text-muted-foreground">
                 Finished in <span className="font-mono text-foreground">{(completionMs / 1000).toFixed(1)}s</span>
               </p>
-              {txHash && (
-                <a
-                  href={`${RITUAL_CHAIN.explorer}/tx/${txHash}`}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="mt-3 inline-flex items-center gap-1.5 text-sm font-mono text-primary hover:underline"
-                >
-                  {shortAddress(txHash)} <ExternalLink className="h-3 w-3" />
-                </a>
-              )}
+              <div className="mt-3 flex flex-col items-center gap-1 text-sm font-mono">
+                {scoreTxHash && (
+                  <a
+                    href={`${RITUAL_CHAIN.explorer}/tx/${scoreTxHash}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center gap-1.5 text-primary hover:underline"
+                  >
+                    score on-chain: {shortAddress(scoreTxHash)} <ExternalLink className="h-3 w-3" />
+                  </a>
+                )}
+                {txHash && (
+                  <a
+                    href={`${RITUAL_CHAIN.explorer}/tx/${txHash}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center gap-1.5 text-muted-foreground hover:underline"
+                  >
+                    entry: {shortAddress(txHash)} <ExternalLink className="h-3 w-3" />
+                  </a>
+                )}
+              </div>
             </div>
             <div className="mt-10 flex justify-center">
               <Button size="lg" onClick={onPlayAgain} className="glow-primary px-8 h-12 text-base">
