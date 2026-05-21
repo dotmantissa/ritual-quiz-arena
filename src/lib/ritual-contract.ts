@@ -3,7 +3,7 @@ import { ensureRitualNetwork, getProvider } from "./ritual-chain";
 export const QUIZ_CONTRACT_ADDRESS = "0xEaF0D8978230C03AA07Df06918059E267847961B";
 
 // keccak256("saveScore(string,uint8,uint32)") first 4 bytes
-const SAVE_SCORE_SELECTOR = "0xb5d89627";
+const SAVE_SCORE_SELECTOR = "0xd6d4df7b";
 
 function pad32(hex: string) {
   return hex.replace(/^0x/, "").padStart(64, "0");
