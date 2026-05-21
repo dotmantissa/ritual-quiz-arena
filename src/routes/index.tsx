@@ -5,6 +5,7 @@ import { toast, Toaster } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { connectWallet, sendSelfTx, shortAddress, RITUAL_CHAIN } from "@/lib/ritual-chain";
+import { saveScoreOnChain } from "@/lib/ritual-contract";
 import { QUESTION_POOL, pickRandom, type Question } from "@/lib/questions";
 import { Quiz } from "@/components/Quiz";
 import { Leaderboard } from "@/components/Leaderboard";
