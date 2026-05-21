@@ -106,11 +106,23 @@ function Index() {
     setCompletionMs(ms);
     setPhase("submitted");
     if (!address || !txHash) return;
+
+    // Save score on-chain to Ritual testnet.
+    let onChainHash: string | null = null;
+    try {
+      toast.info("Confirm the transaction to save your score on-chain…");
+      onChainHash = await saveScoreOnChain(address, discord.trim(), s, ms);
+      setScoreTxHash(onChainHash);
+      toast.success("Score saved on Ritual.");
+    } catch (e) {
+      toast.error("On-chain save failed: " + (e as Error).message);
+    }
+
     const { error } = await supabase.from("leaderboard").insert({
       wallet_address: address.toLowerCase(),
       display_name: discord.trim(),
       score: s,
-      tx_hash: txHash,
+      tx_hash: onChainHash ?? txHash,
       completion_ms: ms,
     });
     if (error) toast.error("Failed to record score: " + error.message);
