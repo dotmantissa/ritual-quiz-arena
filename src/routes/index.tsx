@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
-import { Wallet, Sparkles, Loader2, CheckCircle2, ExternalLink } from "lucide-react";
+import { Wallet, Sparkles, Loader2, CheckCircle2, ExternalLink, Twitter } from "lucide-react";
 import { toast, Toaster } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -164,7 +164,7 @@ function Index() {
               Prove your <span className="text-gradient">web3</span> mind.
             </h1>
             <p className="mt-6 text-lg text-muted-foreground">
-              Ten questions. Fifteen seconds each. One on-chain signature seals your entry on the Ritual leaderboard.
+              Ten questions. Twenty seconds each. One on-chain signature seals your entry on the Ritual leaderboard.
             </p>
             <div className="mt-10">
               <Button size="lg" onClick={onConnect} disabled={connecting} className="glow-primary px-8 h-12 text-base">
@@ -222,7 +222,7 @@ function Index() {
               Welcome, <span className="font-mono text-gradient">{discord.trim()}</span>
             </h1>
             <p className="mt-6 text-lg text-muted-foreground">
-              10 random questions. 15 seconds each. Your finish time breaks ties.
+              10 random questions. 20 seconds each. Your finish time breaks ties.
             </p>
             <div className="mt-10 flex justify-center gap-3">
               <Button size="lg" onClick={onStart} className="glow-primary px-8 h-12 text-base">
@@ -273,9 +273,22 @@ function Index() {
                 )}
               </div>
             </div>
-            <div className="mt-10 flex justify-center">
+            <div className="mt-10 flex justify-center gap-3">
               <Button size="lg" onClick={onPlayAgain} className="glow-primary px-8 h-12 text-base">
                 Play again
+              </Button>
+              <Button
+                size="lg"
+                variant="outline"
+                onClick={() => {
+                  const text = `I scored ${score}/10 on the Ritual Quiz in ${(completionMs / 1000).toFixed(1)}s! Can you beat me?`;
+                  const url = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`;
+                  window.open(url, "_blank", "noopener,noreferrer");
+                }}
+                className="px-8 h-12 text-base"
+              >
+                <Twitter className="h-4 w-4 mr-2" />
+                Share on X
               </Button>
             </div>
             <div className="mt-12">
