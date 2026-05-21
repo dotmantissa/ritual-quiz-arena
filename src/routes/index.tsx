@@ -33,6 +33,7 @@ function Index() {
   const [discord, setDiscord] = useState("");
   const [signing, setSigning] = useState(false);
   const [txHash, setTxHash] = useState<string | null>(null);
+  const [scoreTxHash, setScoreTxHash] = useState<string | null>(null);
   const [startedAt, setStartedAt] = useState<number>(0);
 
   const onConnect = async () => {
