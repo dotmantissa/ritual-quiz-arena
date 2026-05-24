@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
-import { Wallet, Sparkles, Loader2, CheckCircle2, ExternalLink, Twitter } from "lucide-react";
+import { Wallet, Sparkles, Loader2, CheckCircle2, ExternalLink, Twitter, LogOut } from "lucide-react";
 import { toast, Toaster } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -85,6 +85,18 @@ function Index() {
     }
   };
 
+  const onDisconnect = () => {
+    setAddress(null);
+    setDiscord("");
+    setTxHash(null);
+    setScoreTxHash(null);
+    setScore(0);
+    setCompletionMs(0);
+    setQuestions([]);
+    setPhase("connect");
+    toast.success("Wallet disconnected.");
+  };
+
   const onPlayAgain = () => {
     setQuestions(pickRandom(QUESTION_POOL, 10));
     setScore(0);
@@ -145,9 +157,21 @@ function Index() {
             chain <span className="text-foreground">{RITUAL_CHAIN.id}</span>
           </span>
           {address ? (
-            <span className="px-3 py-1.5 rounded-md border border-border bg-card font-mono text-xs">
-              {shortAddress(address)}
-            </span>
+            <>
+              <span className="px-3 py-1.5 rounded-md border border-border bg-card font-mono text-xs">
+                {shortAddress(address)}
+              </span>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={onDisconnect}
+                className="h-8 px-3 font-mono text-xs"
+                title="Disconnect wallet"
+              >
+                <LogOut className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">Disconnect</span>
+              </Button>
+            </>
           ) : (
             <span className="text-muted-foreground">not connected</span>
           )}
